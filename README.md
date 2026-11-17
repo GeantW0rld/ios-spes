@@ -1,7 +1,7 @@
 # ios-spes — Redmi Note 11 bring-up
 
 Experimental source port of [MakrSas/ios-topaz](https://github.com/MakrSas/ios-topaz/tree/topaz)
-to **Redmi Note 11 (`spes`, SM6225 / Snapdragon 680)**. Target handset: 6 GB
+to **Redmi Note 11 (`spesn`, SM6225 / Snapdragon 680)**. Target handset: 6 GB
 physical RAM, unlocked bootloader. The Android “+2 GB” expansion is not RAM
 available to this kernel.
 

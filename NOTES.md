@@ -1,3 +1,34 @@
+# spesn on stock HyperOS OS1.0.11.0.TGKMIXM: Wi-Fi joins but never gets an IP, 2026-11-16
+
+- Handset: Redmi Note 11 NFC Global (spesn), stock HyperOS OS1.0.11.0.TGKMIXM (Android 13).
+  Recovery reports the device as spes. Patch 0099's firmware tables were made from HyperOS 2.0.208.
+- Modem tables did not match: only 8 of 28 modem.* entries equal on modem_a, and the same on modem_b.
+  modem.b12 is 0xe3e70 here (patch: 0xe3e30), b18 and b25 also differ in size. First Wi-Fi boot log:
+  "modem.b12: 933424 of 933488 bytes", then "shutdown after failure". CRC mismatches only warn.
+- Fix tried: regenerated fw_files/fw_ext/fw_all from this phone's modem_a map with the line counts
+  unchanged (28/610/610, so hunk headers stay valid), replaced xnu/patches/0099, rebuilt with CI.
+  Result: modem and WLAN firmware boot, scans list 12 networks. wlanmdsp.mbn (0x3a3174) and
+  bdwlan.bin (0x66d8) have the same sizes as in earlier notes.
+- Join works: auth/assoc status 0, 4-way handshake, "WPA2 keys installed", "joined", link 1,
+  on 2.4 GHz and 5 GHz, with two different access points (a PC hotspot and an ISP box).
+  Occasional "join: failed (60)" in state 2 or 3; the next attempt succeeds.
+- Problem 1: Settings shows an empty IP address and no page loads.
+- Problem 2: the link does not last. It drops 15-35 s after a join ("the AP ended the link, reason 4
+  (state 5)", then link 54, then wifid rejoins).
+- Scans: after "joined", scans keep running back to back (scans 23-35, about 5.5 s each, the next one
+  starts 35-70 ms after the last). The kernel only starts 3 scans itself (next_scan_ms = scans < 3 ...);
+  the rest are wifid requests (api_scan_asked), allowed in S_UP (0099 line ~5948). Join waits for a
+  running scan (line ~5653), which may explain the "failed (60)" timeouts.
+- Tried, no change: other band, other access point, leaving Settings alone for 1-2 min.
+- Settings > Wi-Fi > Configure IP > Manual: Preferences aborts (sig 6, reason ns 2 code 0x6, right
+  after a "SWEET SURF: wrap" line). The same CRASH appears in earlier logs. Cause unknown.
+- Hypotheses, NOT verified: (a) scans keep the radio off the AP's channel and the AP idles the client
+  out (reason 4); (b) the DHCP request is not sent, or the reply never reaches en0.
+  Data path to read next: htt_tx_frame (~5048), spes_wlan_transmit (~5814), w_tx_pump (~5836),
+  rx via w_rx_native -> spes_wlan_rx_hook only when s_state == S_UP (~5717).
+- Next: check the AP's client list (does the phone get an IP/MAC there?), read the data path above,
+  and if (a) holds, try not scanning while S_UP.
+
 # all48 garbled -> 0168 reverted; 0169 cached-PTE experiment, 2026-10-28
 
 - all48 log research/spes-all48-boot.txt (5790 lines, flush #16): every created
