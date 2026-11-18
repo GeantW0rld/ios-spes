@@ -1,0 +1,28 @@
+diff --git a/iokit/Kernel/arm/SpesModem.cpp b/iokit/Kernel/arm/SpesModem.cpp
+index bf533c3..36c51b8 100644
+--- a/iokit/Kernel/arm/SpesModem.cpp
++++ b/iokit/Kernel/arm/SpesModem.cpp
+@@ -5770,6 +5770,11 @@ static IOSimpleLock *etxq_lock;
+ bool
+ spes_wlan_transmit(const uint8_t *frame, size_t length)
+ {
++	static unsigned diag_tx;
++	if (diag_tx < 16 && length >= 14) {
++		diag_tx++;
++		LOG("t=%u ms: diag: iOS sends %u bytes, type %02x%02x, state %u", g_ms, (unsigned)length, frame[12], frame[13], (unsigned)s_state);
++	}
+ 	if (s_state != S_UP || length < 14 || length > 1514 || etxq_lock == NULL) {
+ 		return false;
+ 	}
+@@ -5901,6 +5906,11 @@ radio_poll(unsigned ms)
+ 	if (api_ready) {
+ 		w_join_poll();
+ 		w_tx_pump();
++		static unsigned diag_ms;
++		if (g_ms >= diag_ms) {
++			diag_ms = g_ms + 5000;
++			LOG("t=%u ms: diag: state %u tx sent %u done %u fail %u drop %u queued %u rx_up %u", g_ms, (unsigned)s_state, tx_sent, tx_done, tx_fail, tx_drop, (unsigned)(etxq_tail - etxq_head), rx_up);
++		}
+ 	}
+ 	if (scan_started && !scanning && api_scan_asked && (s_state == S_IDLE || s_state == S_UP)) {
+ 		api_scan_asked = false;
