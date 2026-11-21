@@ -1,3 +1,16 @@
+# Sound works on spesn, 2026-11-21
+
+- Kernel side needed no table change: with adsp=1 the ADSP firmware loads from this phone's
+  modem_a ("not the image": 0 hits), APR reaches READY, /dev/redwood-audio is created; both
+  aw87559 amplifiers answer id 0x5a and take the 0150 settings (spesamp=2, spescodec=4).
+- Root: it was in the state before HackiOS batch 2 (VirtualAudio.plugin in /Library/Audio/Plug-Ins/
+  HAL.disabled, HAL empty, nine Apple drivers still in /System/.../HAL). Built RedwoodAudio.driver
+  (tools/build-spes-audio-hal.sh, SDK 27.2, hackios-userland 906425b); installed it in
+  /System/Library/Audio/Plug-Ins/HAL, then tools/root-audio-hackios-layout.py on a clone of a fresh
+  snapshot; fsck_hfs OK; 21 MiB delta applied from OrangeFox with readback (same size as the notes' batch 2).
+- Boot args used: modem=1 wifi=1 adsp=1 spesamp=2 spescodec=4. Volume left at the default limit.
+- Result: the phone plays sound. Video still crashes mediaserverd (README).
+
 # Wi-Fi works on spesn: the root had no network service for en0, 2026-11-21
 
 - Cause: /private/var/preferences/SystemConfiguration/preferences.plist (192 bytes) held only the host
