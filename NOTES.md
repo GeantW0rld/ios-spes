@@ -1,3 +1,18 @@
+# Wi-Fi works on spesn: the root had no network service for en0, 2026-11-21
+
+- Cause: /private/var/preferences/SystemConfiguration/preferences.plist (192 bytes) held only the host
+  name; NetworkInterfaces.plist already listed en0 (IEEE80211, RedwoodWLAN path) but there was no
+  NetworkServices, Sets or CurrentSet. configd never configured en0: "net: so far 0 frames sent, N
+  received; dropped 0/0" (net_output never called), no DHCP. Link up and rx_up were fine.
+- Fix: added a "Wi-Fi" service on en0 (IPv4 DHCP, IPv6 Automatic) plus a default set "Automatic" to
+  preferences.plist in a clone of a fresh snapshot (plistlib, binary format kept, plutil -lint OK,
+  fsck_hfs OK), 14 MiB delta applied from OrangeFox with tools/apply-ios-root-delta.py.
+  Result: the phone gets an IP and loads pages.
+- Structure written from memory of iOS/macOS SystemConfiguration files, not checked against 16.7;
+  it worked. tools/ has nothing that creates it: a fresh tools/mkiosroot-macos.sh root lacks it.
+- Eliminated on the way: modem firmware tables (see the entry of 2026-11-16), WPA2 keys, the tx queue
+  and the link hook. 0170 (diagnostic counters every 5 s) is not needed any more.
+
 # spesn on stock HyperOS OS1.0.11.0.TGKMIXM: Wi-Fi joins but never gets an IP, 2026-11-16
 
 - Handset: Redmi Note 11 NFC Global (spesn), stock HyperOS OS1.0.11.0.TGKMIXM (Android 13).
